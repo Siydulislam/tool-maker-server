@@ -35,7 +35,19 @@ async function run() {
         console.log("DB connected");
         const toolCollection = client.db('tool-maker').collection('tools');
         const userCollection = client.db('tool-maker').collection('users');
-        const orderCollection = client.db('tool-maker').collection('orders')
+        const orderCollection = client.db('tool-maker').collection('orders');
+
+
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+                next();
+            }
+            else {
+                res.status(403).send({ message: 'forbidden' });
+            }
+        }
 
         // Add a tool
         app.post('/tool', async (req, res) => {
@@ -79,6 +91,25 @@ async function run() {
             } else {
                 return res.status(403).send({ message: 'Forbidden Access' })
             }
+        });
+
+        // Admin
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin })
+        })
+
+        // 
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updateDoc = {
+                $set: { role: 'admin' },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
         });
 
         // Insert and Update an user
