@@ -33,7 +33,21 @@ async function run() {
     try {
         await client.connect();
         console.log("DB connected");
+        const toolCollection = client.db('tool-maker').collection('tools');
         const userCollection = client.db('tool-maker').collection('users');
+
+        app.post('/tool', verifyJWT, async (req, res) => {
+            const tool = req.body;
+            const result = await toolCollection.insertOne(tool);
+            res.send(result);
+        });
+
+        app.get('/tool', async (req, res) => {
+            const query = req.body;
+            const cursor = toolCollection.find(query);
+            const tools = await cursor.toArray();
+            res.send(tools);
+        })
 
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
