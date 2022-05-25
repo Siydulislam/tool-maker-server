@@ -35,6 +35,7 @@ async function run() {
         console.log("DB connected");
         const toolCollection = client.db('tool-maker').collection('tools');
         const userCollection = client.db('tool-maker').collection('users');
+        const orderCollection = client.db('tool-maker').collection('orders')
 
         // Add a tool
         app.post('/tool', async (req, res) => {
@@ -58,6 +59,13 @@ async function run() {
             const tool = await toolCollection.findOne(query);
             res.send(tool);
         })
+
+        // Post a order
+        app.post('/order', async (req, res) => {
+            const order = req.body;
+            const result = await orderCollection.insertOne(order);
+            res.send(result);
+        });
 
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
