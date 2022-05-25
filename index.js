@@ -36,6 +36,7 @@ async function run() {
         const toolCollection = client.db('tool-maker').collection('tools');
         const userCollection = client.db('tool-maker').collection('users');
         const orderCollection = client.db('tool-maker').collection('orders');
+        const reviewCollection = client.db('tool-maker').collection('reviews');
 
 
         const verifyAdmin = async (req, res, next) => {
@@ -92,6 +93,21 @@ async function run() {
                 return res.status(403).send({ message: 'Forbidden Access' })
             }
         });
+
+        // Add a review
+        app.post('/review', async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send(result);
+        });
+
+        // Get all reviews
+        app.get('/review', async (req, res) => {
+            const query = req.body;
+            const cursor = reviewCollection.find(query);
+            const review = await cursor.toArray();
+            res.send(review);
+        })
 
         // Admin
         app.get('/admin/:email', async (req, res) => {
