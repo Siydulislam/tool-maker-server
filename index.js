@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -36,17 +36,27 @@ async function run() {
         const toolCollection = client.db('tool-maker').collection('tools');
         const userCollection = client.db('tool-maker').collection('users');
 
-        app.post('/tool', verifyJWT, async (req, res) => {
+        // Add a tool
+        app.post('/tool', async (req, res) => {
             const tool = req.body;
             const result = await toolCollection.insertOne(tool);
             res.send(result);
         });
 
+        // Get all tools
         app.get('/tool', async (req, res) => {
             const query = req.body;
             const cursor = toolCollection.find(query);
             const tools = await cursor.toArray();
             res.send(tools);
+        })
+
+        // Get a specific tool
+        app.get('/tool/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const tool = await toolCollection.findOne(query);
+            res.send(tool);
         })
 
         app.put('/user/:email', async (req, res) => {
