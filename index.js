@@ -73,6 +73,14 @@ async function run() {
             res.send(tool);
         })
 
+        // Delete Product
+        app.delete('/tool/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const deleteTool = await toolCollection.deleteOne(filter);
+            res.send(deleteTool);
+        })
+
         // Post a order
         app.post('/order', async (req, res) => {
             const order = req.body;
@@ -118,7 +126,7 @@ async function run() {
         })
 
         // 
-        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+        app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const email = req.params.email;
             const filter = { email: email };
             const updateDoc = {
