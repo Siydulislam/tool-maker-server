@@ -73,7 +73,7 @@ async function run() {
             res.send(tool);
         })
 
-        // Delete Product
+        // Delete tool
         app.delete('/tool/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
@@ -102,8 +102,16 @@ async function run() {
             }
         });
 
+        // Get all orders
+        app.get('/allOrder', verifyJWT, verifyAdmin, async (req, res) => {
+            const query = req.body;
+            const cursor = orderCollection.find(query);
+            const orders = await cursor.toArray();
+            res.send(orders);
+        })
+
         // Delete an Order
-        app.delete('/order/:id', verifyJWT, async (req, res) => {
+        app.delete('/order/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const deleteOrder = await orderCollection.deleteOne(filter);
@@ -121,8 +129,8 @@ async function run() {
         app.get('/review', async (req, res) => {
             const query = req.body;
             const cursor = reviewCollection.find(query);
-            const review = await cursor.toArray();
-            res.send(review);
+            const reviews = await cursor.toArray();
+            res.send(reviews);
         })
 
         // Admin
@@ -133,7 +141,7 @@ async function run() {
             res.send({ admin: isAdmin })
         })
 
-        // 
+        // Make one Admin
         app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const email = req.params.email;
             const filter = { email: email };
