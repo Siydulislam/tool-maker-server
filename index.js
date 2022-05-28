@@ -247,6 +247,14 @@ async function run() {
             res.send(updatedInfo);
         });
 
+        // // get user by ID
+        // app.get('/user/:email', verifyJWT, async (req, res) => {
+        //     const email = req.params.id;
+        //     const filter = {email: email}
+        //     const user = await userCollection.findOne(query);
+        //     res.send(user);
+        // })
+
         // Get all user
         app.get('/user', verifyJWT, async (req, res) => {
             const users = await userCollection.find().toArray();
