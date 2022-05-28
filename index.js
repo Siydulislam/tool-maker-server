@@ -166,6 +166,14 @@ async function run() {
             res.send(deleteOrder);
         })
 
+        // Delete an order by Admin
+        app.delete('/order/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const deleteOrder = await orderCollection.deleteOne(filter);
+            res.send(deleteOrder);
+        })
+
         // Add a review
         app.post('/review', async (req, res) => {
             const review = req.body;
@@ -214,7 +222,40 @@ async function run() {
             res.send({ result, token });
         });
 
-        // Get user
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            res.send(user);
+        })
+
+        // Update an user
+        app.patch('/user/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const userInfo = req.body;
+            console.log(userInfo);
+            const filter = { email: email };
+            const updatedDoc = {
+                $set: {
+                    education: userInfo.education,
+                    location: userInfo.location,
+                    phone: userInfo.phone,
+                    linkedin: userInfo.linkedin,
+                }
+            }
+            const updatedInfo = await userCollection.updateOne(filter, updatedDoc);
+            res.send(updatedInfo);
+        });
+
+        // // get user by ID
+        // app.get('/user/:email', verifyJWT, async (req, res) => {
+        //     const email = req.params.id;
+        //     const filter = {email: email}
+        //     const user = await userCollection.findOne(query);
+        //     res.send(user);
+        // })
+
+        // Get all user
         app.get('/user', verifyJWT, async (req, res) => {
             const users = await userCollection.find().toArray();
             res.send(users);
