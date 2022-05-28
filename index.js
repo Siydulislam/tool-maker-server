@@ -133,6 +133,7 @@ async function run() {
             res.send(order);
         })
 
+        // Store transaction data in database
         app.patch('/order/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const payment = req.body;
