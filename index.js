@@ -3,11 +3,19 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors());
+// app.use(cors());
+app.use(
+    cors({
+        origin: true,
+        optionsSuccessStatus: 200,
+        credentials: true,
+    })
+);
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zarpgn2.mongodb.net/?retryWrites=true&w=majority`;
@@ -37,8 +45,10 @@ async function run() {
         const userCollection = client.db('tool-maker').collection('users');
         const orderCollection = client.db('tool-maker').collection('orders');
         const reviewCollection = client.db('tool-maker').collection('reviews');
+        const paymentCollection = client.db('tool-maker').collection('payments');
 
 
+        // make admin
         const verifyAdmin = async (req, res, next) => {
             const requester = req.decoded.email;
             const requesterAccount = await userCollection.findOne({ email: requester });
@@ -49,6 +59,19 @@ async function run() {
                 res.status(403).send({ message: 'forbidden' });
             }
         }
+
+        // Make payment
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const service = req.body;
+            const price = service.price;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
+        });
 
         // Add a tool
         app.post('/tool', async (req, res) => {
@@ -102,6 +125,30 @@ async function run() {
             }
         });
 
+        // get order by ID
+        app.get('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const order = await orderCollection.findOne(query);
+            res.send(order);
+        })
+
+        app.patch('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+
+            const result = await paymentCollection.insertOne(payment);
+            const updatedOrder = await orderCollection.updateOne(filter, updatedDoc);
+            res.send(updatedOrder);
+        })
+
         // Get all orders
         app.get('/allOrder', verifyJWT, verifyAdmin, async (req, res) => {
             const query = req.body;
@@ -111,7 +158,7 @@ async function run() {
         })
 
         // Delete an Order
-        app.delete('/order/:id', verifyJWT, verifyAdmin, async (req, res) => {
+        app.delete('/order/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const deleteOrder = await orderCollection.deleteOne(filter);
